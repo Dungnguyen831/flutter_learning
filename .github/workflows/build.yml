@@ -1,0 +1,42 @@
+name: Build and Test on Push to Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.19.0' # Thay thế bằng phiên bản flutter bạn muốn sử dụng
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Cache cho các gói phụ thuộc (dependencies) để tăng tốc độ build
+      - name: Cache Flutter packages
+        uses: actions/cache@v3
+        with:
+          path: .dart_tool/package_config
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
+      # Chạy unit tests
+      - name: Run Unit Tests
+        run: flutter test
+
+      # Build APK (cho Android)
+      - name: Build APK
+        run: flutter build apk --release
+      # Đưa khóa API Gemini từ GitHub Secrets vào biến môi trường để ứng dụng sử dụng
+      - env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
